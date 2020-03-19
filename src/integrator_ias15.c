@@ -244,6 +244,18 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
         a0[3*k+1] = particles[mk].ay; 
         a0[3*k+2] = particles[mk].az;
     }
+
+    /*
+    for(int k=0;k<N;k++) {
+      int k0 = 3*k+0;
+      int k1 = 3*k+1;
+      int k2 = 3*k+2;
+      printf("XXX %d %lf %lf %lf %lf ", 0, r->t, x0[k0], x0[k1], x0[k2]);
+      printf("%le %le %le ", v0[k0], v0[k1], v0[k2]);
+      printf("%le %le %le\n", a0[k0], a0[k1], a0[k2]);	                  
+    }
+    */
+    
     if (r->gravity==REB_GRAVITY_COMPENSATED){
         for(int k=0;k<N;k++) {
             int mk = map[k];
@@ -325,6 +337,8 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
             s[6] = 5. * s[5] * h[n] / 7.;
             s[7] = 3. * s[6] * h[n] / 4.;
             s[8] = 7. * s[7] * h[n] / 9.;
+
+	    //printf("%le %le %le %le %le %le %le %le %le\n", s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8]);	    
             
             r->t = t_beginning + s[0];
 
@@ -341,6 +355,8 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
                 particles[mi].y = xk1 + x0[k1];
                 double xk2  = -csx[k2] + (s[8]*b.p6[k2] + s[7]*b.p5[k2] + s[6]*b.p4[k2] + s[5]*b.p3[k2] + s[4]*b.p2[k2] + s[3]*b.p1[k2] + s[2]*b.p0[k2] + s[1]*a0[k2] + s[0]*v0[k2] );
                 particles[mi].z = xk2 + x0[k2];
+
+
             }
             if (r->calculate_megno || (r->additional_forces && r->force_is_velocity_dependent)){
                 s[0] = r->dt * h[n];
@@ -353,7 +369,8 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
                 s[7] = 7. * s[6] * h[n] / 8.;
 
                 for(int i=0;i<N;i++) {                  // Predict velocities at interval n using b values
-                    int mi = map[i];
+
+		  int mi = map[i];
                     const int k0 = 3*i+0;
                     const int k1 = 3*i+1;
                     const int k2 = 3*i+2;
@@ -364,10 +381,24 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
                     particles[mi].vy = vk1 + v0[k1];
                     double vk2 =  -csv[k2] + s[7]*b.p6[k2] + s[6]*b.p5[k2] + s[5]*b.p4[k2] + s[4]*b.p3[k2] + s[3]*b.p2[k2] + s[2]*b.p1[k2] + s[1]*b.p0[k2] + s[0]*a0[k2];
                     particles[mi].vz = vk2 + v0[k2];
+
                 }
             }
 
+	    /*
+            for(int i=0;i<N;i++) {
+	        int mi = map[i];
+		const int k0 = 3*i+0;
+		const int k1 = 3*i+1;
+		const int k2 = 3*i+2;
 
+		printf("<-- %d %lf %lf %lf %lf ", n, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
+		printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
+		printf("%lf %le %le %le %le %le %le %le\n", r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
+		
+	    }
+	    */
+	    
             reb_update_acceleration(r);             // Calculate forces at interval n
             if (r->calculate_megno){
                 integrator_megno_thisdt += w[n] * r->t * reb_tools_megno_deltad_delta(r);
@@ -508,6 +539,7 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
             }
         }
     }
+
     // Set time back to initial value (will be updated below) 
     r->t = t_beginning;
     // Find new timestep
@@ -629,6 +661,15 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
         reb_tools_megno_update(r, dY);
     }
 
+    /*
+    for(int k=0;k<N;++k) {
+      int k0 = 3*k+0;
+      int k1 = 3*k+1;
+      int k2 = 3*k+2;      
+      printf("--> %d %lf %lf %lf %lf %le %le %le\n", 8, r->t, x0[k0], x0[k1], x0[k2], v0[k0], v0[k1], v0[k2]);
+    }
+    */
+    
     // Swap particle buffers
     for(int k=0;k<N;++k) {
         int mk = map[k];
