@@ -305,6 +305,7 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
     //   1) predictor_corrector_error better than 1e-16 
     //   2) predictor_corrector_error starts to oscillate
     //   3) more than 12 iterations
+    int niter=0;
     while(1){
         if(predictor_corrector_error<1e-16){
             break;
@@ -384,20 +385,6 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
 
                 }
             }
-
-	    /*
-            for(int i=0;i<N;i++) {
-	        int mi = map[i];
-		const int k0 = 3*i+0;
-		const int k1 = 3*i+1;
-		const int k2 = 3*i+2;
-
-		printf("<-- %d %lf %lf %lf %lf ", n, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
-		printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
-		printf("%lf %le %le %le %le %le %le %le\n", r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
-		
-	    }
-	    */
 	    
             reb_update_acceleration(r);             // Calculate forces at interval n
             if (r->calculate_megno){
@@ -538,7 +525,24 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
                 }
             }
         }
+
+	for(int i=0;i<N;i++) {
+	  int mi = map[i];
+	  const int k0 = 3*i+0;
+	  const int k1 = 3*i+1;
+	  const int k2 = 3*i+2;
+
+	  //printf("<-- %d %lf %lf %lf %lf ", 0, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
+	  //printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
+	  printf("%d %lf %.12le %.12le %.12le %.12le %.12le %.12le %.12le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
+		
+	}
+	niter++;
+	
     }
+
+    printf("\n");
+    
 
     // Set time back to initial value (will be updated below) 
     r->t = t_beginning;
