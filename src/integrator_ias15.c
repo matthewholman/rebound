@@ -306,6 +306,19 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
     //   2) predictor_corrector_error starts to oscillate
     //   3) more than 12 iterations
     int niter=0;
+
+    for(int i=0;i<N;i++) {
+      int mi = map[i];
+      const int k0 = 3*i+0;
+      const int k1 = 3*i+1;
+      const int k2 = 3*i+2;
+
+      //printf("<-- %d %lf %lf %lf %lf ", 0, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
+      //printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
+      printf("%d %lf %.16le %.16le %.16le %.16le %.16le %.16le %.16le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
+		
+    }
+
     while(1){
         if(predictor_corrector_error<1e-16){
             break;
@@ -534,7 +547,7 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
 
 	  //printf("<-- %d %lf %lf %lf %lf ", 0, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
 	  //printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
-	  printf("%d %lf %.12le %.12le %.12le %.12le %.12le %.12le %.12le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
+	  printf("%d %lf %.16le %.16le %.16le %.16le %.16le %.16le %.16le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
 		
 	}
 	niter++;
