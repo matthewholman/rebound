@@ -315,7 +315,7 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
 
       //printf("<-- %d %lf %lf %lf %lf ", 0, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
       //printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
-      printf("%d %lf %.16le %.16le %.16le %.16le %.16le %.16le %.16le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
+      //printf("%d %lf %.16le %.16le %.16le %.16le %.16le %.16le %.16le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
 		
     }
 
@@ -547,14 +547,14 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
 
 	  //printf("<-- %d %lf %lf %lf %lf ", 0, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
 	  //printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
-	  printf("%d %lf %.16le %.16le %.16le %.16le %.16le %.16le %.16le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
+	  //printf("%d %lf %.16le %.16le %.16le %.16le %.16le %.16le %.16le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
 		
 	}
 	niter++;
 	
     }
 
-    printf("\n");
+    //printf("\n");
     
 
     // Set time back to initial value (will be updated below) 
