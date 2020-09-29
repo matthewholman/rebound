@@ -214,7 +214,7 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
         map = r->ri_ias15.map; // identity map
     }
     const int N3 = 3*N;
-    
+
     // reb_update_acceleration(); // Not needed. Forces are already calculated in main routine.
     
     double s[9];                // Summation coefficients 
@@ -245,17 +245,6 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
         a0[3*k+2] = particles[mk].az;
     }
 
-    /*
-    for(int k=0;k<N;k++) {
-      int k0 = 3*k+0;
-      int k1 = 3*k+1;
-      int k2 = 3*k+2;
-      printf("XXX %d %lf %lf %lf %lf ", 0, r->t, x0[k0], x0[k1], x0[k2]);
-      printf("%le %le %le ", v0[k0], v0[k1], v0[k2]);
-      printf("%le %le %le\n", a0[k0], a0[k1], a0[k2]);	                  
-    }
-    */
-    
     if (r->gravity==REB_GRAVITY_COMPENSATED){
         for(int k=0;k<N;k++) {
             int mk = map[k];
@@ -305,20 +294,6 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
     //   1) predictor_corrector_error better than 1e-16 
     //   2) predictor_corrector_error starts to oscillate
     //   3) more than 12 iterations
-    int niter=0;
-
-    for(int i=0;i<N;i++) {
-      int mi = map[i];
-      const int k0 = 3*i+0;
-      const int k1 = 3*i+1;
-      const int k2 = 3*i+2;
-
-      //printf("<-- %d %lf %lf %lf %lf ", 0, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
-      //printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
-      printf("%d %lf %.16le %.16le %.16le %.16le %.16le %.16le %.16le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
-		
-    }
-
     while(1){
         if(predictor_corrector_error<1e-16){
             break;
@@ -532,31 +507,14 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
                     } 
                     if (r->ri_ias15.epsilon_global){
                         predictor_corrector_error = maxb6ktmp/maxak;
+			//printf("%le %le\n", maxb6ktmp, maxak);
                     }
                     
                     break;
                 }
             }
         }
-
-	for(int i=0;i<N;i++) {
-	  int mi = map[i];
-	  const int k0 = 3*i+0;
-	  const int k1 = 3*i+1;
-	  const int k2 = 3*i+2;
-
-	  //printf("<-- %d %lf %lf %lf %lf ", 0, r->t, particles[mi].x, particles[mi].y, particles[mi].z);	      
-	  //printf("%le %le %le\n", particles[mi].vx, particles[mi].vy, particles[mi].vz);
-	  printf("%d %lf %.16le %.16le %.16le %.16le %.16le %.16le %.16le\n", niter, r->t, b.p0[k0], b.p1[k0], b.p2[k0], b.p3[k0], b.p4[k0], b.p5[k0], b.p6[k0]);		
-		
-	}
-	niter++;
-	
     }
-
-    printf("\n");
-    
-
     // Set time back to initial value (will be updated below) 
     r->t = t_beginning;
     // Find new timestep
@@ -678,15 +636,6 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
         reb_tools_megno_update(r, dY);
     }
 
-    /*
-    for(int k=0;k<N;++k) {
-      int k0 = 3*k+0;
-      int k1 = 3*k+1;
-      int k2 = 3*k+2;      
-      printf("--> %d %lf %lf %lf %lf %le %le %le\n", 8, r->t, x0[k0], x0[k1], x0[k2], v0[k0], v0[k1], v0[k2]);
-    }
-    */
-    
     // Swap particle buffers
     for(int k=0;k<N;++k) {
         int mk = map[k];
@@ -750,6 +699,7 @@ static void predict_next_step(double ratio, int N3,  const struct reb_dpconst7 _
             b.p4[k] = e.p4[k] + be4;
             b.p5[k] = e.p5[k] + be5;
             b.p6[k] = e.p6[k] + be6;
+
         }
     }
 }

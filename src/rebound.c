@@ -125,13 +125,15 @@ void reb_step(struct reb_simulation* const r){
         reb_calculate_acceleration_var(r);
     }
     // Calculate non-gravity accelerations. 
-    if (r->additional_forces) r->additional_forces(r);
+    if (r->additional_forces){
+	r->additional_forces(r);
+    }
     PROFILING_STOP(PROFILING_CAT_GRAVITY)
 
     // A 'DKD'-like integrator will do the 'KD' part.
     PROFILING_START()
     reb_integrator_part2(r);
-    
+
     if (r->post_timestep_modifications){
         reb_integrator_synchronize(r);
         r->post_timestep_modifications(r);
@@ -154,13 +156,15 @@ void reb_step(struct reb_simulation* const r){
     PROFILING_START()
     reb_collision_search(r);
     PROFILING_STOP(PROFILING_CAT_COLLISION)
-    
+
     // Update walltime
     struct timeval time_end;
     gettimeofday(&time_end,NULL);
     r->walltime += time_end.tv_sec-time_beginning.tv_sec+(time_end.tv_usec-time_beginning.tv_usec)/1e6;
     // Update step counter
     r->steps_done++; // This also counts failed IAS15 steps
+
+    
 }
 
 void reb_exit(const char* const msg){
@@ -553,8 +557,8 @@ void reb_init_simulation(struct reb_simulation* r){
     r->ri_saba.is_synchronized = 1;
     
     // ********** IAS15
-    r->ri_ias15.epsilon         = 1e-9; // original
-    //r->ri_ias15.epsilon         = 1e-5;    
+    //r->ri_ias15.epsilon         = 1e-9; // original
+    r->ri_ias15.epsilon         = 1e-11;    
     r->ri_ias15.min_dt      = 0;
     r->ri_ias15.epsilon_global  = 1;
     r->ri_ias15.iterations_max_exceeded = 0;    
