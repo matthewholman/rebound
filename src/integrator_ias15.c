@@ -294,6 +294,7 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
     //   1) predictor_corrector_error better than 1e-16 
     //   2) predictor_corrector_error starts to oscillate
     //   3) more than 12 iterations
+
     while(1){
         if(predictor_corrector_error<1e-16){
             break;
@@ -515,6 +516,7 @@ static int reb_integrator_ias15_step(struct reb_simulation* r) {
             }
         }
     }
+
     // Set time back to initial value (will be updated below) 
     r->t = t_beginning;
     // Find new timestep
