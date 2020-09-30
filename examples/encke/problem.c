@@ -40,6 +40,8 @@ int main(int argc, char **argv)
     /*begin initialization*/
 	//This is a test comment DH
 
+    // Here is another comment MJH
+
     struct reb_simulation* r = reb_create_simulation();
 
     double tmax;
