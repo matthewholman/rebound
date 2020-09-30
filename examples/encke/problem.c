@@ -38,6 +38,7 @@ void consqp(struct reb_simulation* r, double *Ep, double L[NDIM], double *Lmp);
 int main(int argc, char **argv)
 {
     /*begin initialization*/
+	//This is a test comment DH
 
     struct reb_simulation* r = reb_create_simulation();
 
