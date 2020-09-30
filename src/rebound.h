@@ -471,7 +471,90 @@ struct reb_simulation_integrator_eos {
     unsigned int is_synchronized;   ///< Flag to indicate if the drift step at the end of the last timestep has been taken.
 };
 
+typedef struct
+{
+    double gm, r0, v2, eta, beta, zeta, b, peri, period;
+    double x, y, z, vx, vy, vz;
+    double csxh[3], csvh[3];
+} orbstruct;
+    
+/**
+ * @brief This structure contains variables and pointer used by the IAS15 integrator.
+ */
+struct reb_simulation_integrator_encke {
+    /**
+     * @brief This parameter controls the accuracy of the integrator.
+     * @details Set to -1 to make encke a non-adaptive integrator.
+     **/
+    double epsilon;
 
+    /**
+     * @brief The minimum allowed timestep.
+     * @details The default value is 0 (no minimal timestep).
+     * More details needed.
+     **/
+    double min_dt;
+    
+    /**
+     * @cond PRIVATE
+     * Internal data structures below. Nothing to be changed by the user.
+     */
+    /**
+     * @brief Counter how many times the iteration did not converge. 
+     */
+    unsigned long iterations_max_exceeded;
+
+    int allocatedN;             ///< Size of allocated arrays.
+
+    double* REBOUND_RESTRICT at;            ///< Temporary buffer for acceleration
+    double* REBOUND_RESTRICT x0;            ///<                      position (used for initial values at h=0)
+    double* REBOUND_RESTRICT v0;            ///<                      velocity
+    double* REBOUND_RESTRICT a0;            ///<                      acceleration
+    double* REBOUND_RESTRICT csa0;          ///<                      compensated summation for a
+
+    double* REBOUND_RESTRICT csx;           ///<                      compensated summation for x
+    double* REBOUND_RESTRICT csv;           ///<                      compensated summation for v
+
+    //double* REBOUND_RESTRICT xhel;
+    //double* REBOUND_RESTRICT vhel;
+    
+    //double* REBOUND_RESTRICT csxh;          ///<                      compensated summation for ref x
+    //double* REBOUND_RESTRICT csvh;          ///<                      compensated summation for ref v
+
+    // Quantities below could be stored in particle arrays
+    double* REBOUND_RESTRICT m;             ///<                      masses
+    //double* REBOUND_RESTRICT xpert;
+    //double* REBOUND_RESTRICT vpert;
+    //double* REBOUND_RESTRICT apert;
+
+    double* REBOUND_RESTRICT atr;           ///<                      acceleration
+    double* REBOUND_RESTRICT gravitycsvr;   ///<                      compensated summation for gravity
+
+    //double* REBOUND_RESTRICT factor1keepprime;    
+
+    struct reb_dp7 g;
+    struct reb_dp7 b;
+    struct reb_dp7 csb;         ///< Compensated summation for b
+    struct reb_dp7 e;
+
+    // The following values are used for resetting the b and e coefficients if a timestep gets rejected
+    struct reb_dp7 br;
+    struct reb_dp7 er;
+
+    double Msun;    
+    orbstruct* orb;
+    double t0;
+
+    int ccount;
+    int iter;            
+    
+    int* map;               // map to particles (identity map for non-mercurius simulations)
+    int map_allocated_N;    // allocated size for map
+    /**
+     * @endcond
+     */
+
+};
 
 /**
  * @cond PRIVATE
@@ -974,6 +1057,7 @@ struct reb_simulation {
         REB_INTEGRATOR_MERCURIUS = 9,///< MERCURIUS integrator 
         REB_INTEGRATOR_SABA = 10,    ///< SABA integrator family (Laskar and Robutel 2001)
         REB_INTEGRATOR_EOS = 11,     ///< Embedded Operator Splitting (EOS) integrator family (Rein 2019)
+        REB_INTEGRATOR_ENCKE = 12,     ///< Encke integrator
         } integrator;
 
     /**
@@ -1010,7 +1094,8 @@ struct reb_simulation {
     struct reb_simulation_integrator_ias15 ri_ias15;    ///< The IAS15 struct
     struct reb_simulation_integrator_mercurius ri_mercurius;      ///< The MERCURIUS struct
     struct reb_simulation_integrator_janus ri_janus;    ///< The JANUS struct 
-    struct reb_simulation_integrator_eos ri_eos;        ///< The EOS struct 
+    struct reb_simulation_integrator_eos ri_eos;        ///< The EOS struct
+    struct reb_simulation_integrator_encke ri_encke;     ///< The Encke struct     
     /** @} */
 
     /**

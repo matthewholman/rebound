@@ -584,10 +584,18 @@ void reb_init_simulation(struct reb_simulation* r){
     r->ri_eos.safe_mode = 1;
     r->ri_eos.is_synchronized = 1;
 
+    // Integrators  
+    // ********** Encke
+    r->ri_encke.epsilon         = -1.0;    
+    r->ri_encke.min_dt      = 0;
+    r->ri_encke.iterations_max_exceeded = 0;    
+
     // Tree parameters. Will not be used unless gravity or collision search makes use of tree.
     r->tree_needs_update= 0;
     r->tree_root        = NULL;
     r->opening_angle2   = 0.25;
+
+    
 
 #ifdef MPI
     r->mpi_id = 0;                            
