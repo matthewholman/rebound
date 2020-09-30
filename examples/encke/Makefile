@@ -1,10 +1,21 @@
 export OPENGL=1
 include ../../src/Makefile.defs
 
-all: librebound
+SOURCES=problem.c problem2.c
+
+all: $(SOURCES) librebound
+
+problem: librebound
 	@echo ""
 	@echo "Compiling problem file ..."
-	$(CC) -I../../src/ -Wl,-rpath,./ $(OPT) $(PREDEF) problem.c -L. -lrebound $(LIB) -o rebound
+	$(CC) -I../../src/ -Wl,-rpath,./ $(OPT) $(PREDEF) problem.c -L. -lrebound $(LIB) -o problem
+	@echo ""
+	@echo "REBOUND compiled successfully."
+
+problem2: librebound
+	@echo ""
+	@echo "Compiling problem file ..."
+	$(CC) -I../../src/ -Wl,-rpath,./ $(OPT) $(PREDEF) problem2.c -L. -lrebound $(LIB) -o problem
 	@echo ""
 	@echo "REBOUND compiled successfully."
 
