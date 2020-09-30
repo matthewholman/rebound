@@ -15,7 +15,7 @@ problem: librebound
 problem2: librebound
 	@echo ""
 	@echo "Compiling problem file ..."
-	$(CC) -I../../src/ -Wl,-rpath,./ $(OPT) $(PREDEF) problem2.c -L. -lrebound $(LIB) -o problem
+	$(CC) -I../../src/ -Wl,-rpath,./ $(OPT) $(PREDEF) problem2.c -L. -lrebound $(LIB) -o problem2
 	@echo ""
 	@echo "REBOUND compiled successfully."
 
