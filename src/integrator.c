@@ -45,7 +45,7 @@
 #include "integrator_sei.h"
 #include "integrator_janus.h"
 #include "integrator_eos.h"
-#include "integrator_encke.h"
+#include "integrator_encke_hh.h"
 
 void reb_integrator_part1(struct reb_simulation* r){
 	switch(r->integrator){
@@ -73,8 +73,8 @@ void reb_integrator_part1(struct reb_simulation* r){
 		case REB_INTEGRATOR_EOS:
 			reb_integrator_eos_part1(r);
 			break;
-		case REB_INTEGRATOR_ENCKE:
-			reb_integrator_encke_part1(r);
+		case REB_INTEGRATOR_ENCKE_HH:
+			reb_integrator_encke_hh_part1(r);
 			break;
 		default:
 			break;
@@ -107,8 +107,8 @@ void reb_integrator_part2(struct reb_simulation* r){
 		case REB_INTEGRATOR_EOS:
 			reb_integrator_eos_part2(r);
 			break;
-		case REB_INTEGRATOR_ENCKE:
-			reb_integrator_encke_part2(r);
+		case REB_INTEGRATOR_ENCKE_HH:
+			reb_integrator_encke_hh_part2(r);
 			break;
         case REB_INTEGRATOR_NONE:
             r->t += r->dt;
@@ -145,8 +145,8 @@ void reb_integrator_synchronize(struct reb_simulation* r){
 		case REB_INTEGRATOR_EOS:
 			reb_integrator_eos_synchronize(r);
 			break;
-		case REB_INTEGRATOR_ENCKE:
-			reb_integrator_encke_synchronize(r);
+		case REB_INTEGRATOR_ENCKE_HH:
+			reb_integrator_encke_hh_synchronize(r);
 			break;
 		default:
 			break;
@@ -174,7 +174,7 @@ void reb_integrator_reset(struct reb_simulation* r){
 	reb_integrator_saba_reset(r);
 	reb_integrator_janus_reset(r);
 	reb_integrator_eos_reset(r);
-	reb_integrator_encke_reset(r);	
+	reb_integrator_encke_hh_reset(r);	
 }
 
 void reb_update_acceleration(struct reb_simulation* r){

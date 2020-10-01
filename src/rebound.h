@@ -481,7 +481,7 @@ typedef struct
 /**
  * @brief This structure contains variables and pointer used by the IAS15 integrator.
  */
-struct reb_simulation_integrator_encke {
+struct reb_simulation_integrator_encke_hh {
     /**
      * @brief This parameter controls the accuracy of the integrator.
      * @details Set to -1 to make encke a non-adaptive integrator.
@@ -1057,7 +1057,7 @@ struct reb_simulation {
         REB_INTEGRATOR_MERCURIUS = 9,///< MERCURIUS integrator 
         REB_INTEGRATOR_SABA = 10,    ///< SABA integrator family (Laskar and Robutel 2001)
         REB_INTEGRATOR_EOS = 11,     ///< Embedded Operator Splitting (EOS) integrator family (Rein 2019)
-        REB_INTEGRATOR_ENCKE = 12,     ///< Encke integrator
+        REB_INTEGRATOR_ENCKE_HH = 12,///< EnckeHH integrator
         } integrator;
 
     /**
@@ -1095,7 +1095,7 @@ struct reb_simulation {
     struct reb_simulation_integrator_mercurius ri_mercurius;      ///< The MERCURIUS struct
     struct reb_simulation_integrator_janus ri_janus;    ///< The JANUS struct 
     struct reb_simulation_integrator_eos ri_eos;        ///< The EOS struct
-    struct reb_simulation_integrator_encke ri_encke;     ///< The Encke struct     
+    struct reb_simulation_integrator_encke_hh ri_encke_hh;     ///< The EnckeHH struct     
     /** @} */
 
     /**

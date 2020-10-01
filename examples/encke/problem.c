@@ -6,7 +6,7 @@
 #include <string.h>
 #include "rebound.h"
 #include "universal.h"
-#include "integrator_encke.h"
+#include "integrator_encke_hh.h"
 
 static struct reb_dpconst7 dpcast(struct reb_dp7 dp){
     struct reb_dpconst7 dpc = {
@@ -29,7 +29,7 @@ static inline void add_cs(double* p, double* csp, double inp){
     *p = t;
 }
 
-void enckeias15_0(double *apert, double *atc, double *xtrue, double *m, int n);
+void acceleration_0(double *apert, double *atc, double *xtrue, double *m, int n);
 
 void insolarencke(struct reb_simulation* r, double epsilon, int is);
 
@@ -87,9 +87,6 @@ int main(int argc, char **argv)
       timek = clock();
       printf("%g done\n",(float)is/(float)iseed);
 
-      printf("here\n");
-      fflush(stdout);
-
       // Set up initial conditions
       insolarencke(r, epsilon, is);
 
@@ -101,7 +98,7 @@ int main(int argc, char **argv)
       double hav = 0.;
       
       //t = 0.;
-      r->ri_encke.t0 = 0.;
+      r->ri_encke_hh.t0 = 0.;
 
       // Open output file 
       char filen[50];
@@ -112,32 +109,30 @@ int main(int argc, char **argv)
       fprintf(fcons,"%0.16le %0.16le\n",r->t,E0);
       fflush(fcons);
 
-      r->ri_encke.ccount=0;	
-      
+      r->ri_encke_hh.ccount=0;
+
       while(r->t < tmax){
         i++;
 
-	r->ri_encke.iter=0;
+	r->ri_encke_hh.iter=0;
 
-	reb_integrator_encke_step(r);
+	reb_integrator_encke_hh_step(r);
 
 	if(rcount == 0){
-            itav1 = itav1 + (float)(r->ri_encke.iter);
+            itav1 = itav1 + (float)(r->ri_encke_hh.iter);
             ct1++;
 	}else{
-            itav2 = itav2 + (float)(r->ri_encke.iter);
+            itav2 = itav2 + (float)(r->ri_encke_hh.iter);
             ct2++;
 	}
 
-        if((r->t) > (r->ri_encke.t0)){
+        if((r->t) > (r->ri_encke_hh.t0)){
 	    // Updates the reference trajectory
 	    update_two_bod(r,&flg,&rcount);
-
           flgt += flg;
         }
-	
-        hav += (r->dt);
 
+        hav += (r->dt);
     	
         if((r->t) > tv[ic]){
           ic++;
@@ -177,27 +172,27 @@ void insolarencke(struct reb_simulation* r, double epsilon, int is)
     int N = r->N;
     int n3 = N*3;
 
-    reb_integrator_encke_alloc(r);
+    reb_integrator_encke_hh_alloc(r);
 
-    r->ri_encke.epsilon = epsilon;
+    r->ri_encke_hh.epsilon = epsilon;
 
-    r->ri_encke.ccount = 0;
-    r->ri_encke.iter = 0;    
+    r->ri_encke_hh.ccount = 0;
+    r->ri_encke_hh.iter = 0;    
     
-    double* restrict const m = r->ri_encke.m;
+    double* restrict const m = r->ri_encke_hh.m;
 
-    double* restrict const at = r->ri_encke.at;
+    double* restrict const at = r->ri_encke_hh.at;
 
-    double* restrict const csx = r->ri_encke.csx;
-    double* restrict const csv = r->ri_encke.csv;        
-    double* restrict const csa0 = r->ri_encke.csa0;
+    double* restrict const csx = r->ri_encke_hh.csx;
+    double* restrict const csv = r->ri_encke_hh.csv;        
+    double* restrict const csa0 = r->ri_encke_hh.csa0;
 
-    orbstruct* restrict const orb = r->ri_encke.orb;
+    orbstruct* restrict const orb = r->ri_encke_hh.orb;
 
-    const struct reb_dpconst7 e  = dpcast(r->ri_encke.e);
-    const struct reb_dpconst7 b  = dpcast(r->ri_encke.b);
-    const struct reb_dpconst7 er = dpcast(r->ri_encke.er);
-    const struct reb_dpconst7 br = dpcast(r->ri_encke.br);
+    const struct reb_dpconst7 e  = dpcast(r->ri_encke_hh.e);
+    const struct reb_dpconst7 b  = dpcast(r->ri_encke_hh.b);
+    const struct reb_dpconst7 er = dpcast(r->ri_encke_hh.er);
+    const struct reb_dpconst7 br = dpcast(r->ri_encke_hh.br);
 
     double mtemp[5] =
 	{
@@ -228,7 +223,7 @@ void insolarencke(struct reb_simulation* r, double epsilon, int is)
     double* xhel = malloc(sizeof(double)*n3);
     double* vhel = malloc(sizeof(double)*n3);        
 
-    r->ri_encke.Msun = mtemp[0];
+    r->ri_encke_hh.Msun = mtemp[0];
 
     double Msun = mtemp[0];    
     
@@ -240,7 +235,7 @@ void insolarencke(struct reb_simulation* r, double epsilon, int is)
 	    vtemp[i][k] = vtemp[i][k]*YEAR;
 	}
     }
-    
+
     /*force center of mass to be stationary and centered (not needed) */
 
     double xcm[NDIM],vcm[NDIM];
@@ -301,7 +296,7 @@ void insolarencke(struct reb_simulation* r, double epsilon, int is)
     }
 
     // Calculate perturbed acceleration
-    enckeias15_0(at,csa0,xhel,m,N);
+    acceleration_0(at,csa0,xhel,m,N);
 
     r->dt_last_done = 0.;
     r->N = 0;    
@@ -332,7 +327,6 @@ void insolarencke(struct reb_simulation* r, double epsilon, int is)
 
     free(xhel);
     free(vhel);
-    
 
 }
 
@@ -346,8 +340,8 @@ void consqp(struct reb_simulation* r,
 
     int nprog = n + 1;
 
-    double* restrict const m = r->ri_encke.m;
-    orbstruct* restrict const orb = r->ri_encke.orb;    
+    double* restrict const m = r->ri_encke_hh.m;
+    orbstruct* restrict const orb = r->ri_encke_hh.orb;    
 
     double xcm[NDIM],vcm[NDIM],sv[NDIM],sx[NDIM];
     double M,x[NMAX][NDIM],v[NMAX][NDIM];
@@ -360,7 +354,7 @@ void consqp(struct reb_simulation* r,
 
     double mtemp[NMAX];
 
-    int* map = r->ri_encke.map;
+    int* map = r->ri_encke_hh.map;
     struct reb_particle* const particles = r->particles;    
 
     for(int i=0; i<n; i++){
@@ -388,7 +382,7 @@ void consqp(struct reb_simulation* r,
 	}
     }
 
-    M = r->ri_encke.Msun;
+    M = r->ri_encke_hh.Msun;
     E = 0.;
     Lm = 0.;
 
@@ -450,12 +444,10 @@ void consqp(struct reb_simulation* r,
 }
 
 
-
-// I believe this only gets called for the initial conditions
 // This is calculating the mutual accelations among the non-sun masses, along with
 // the associated compensated sums.
 //
-void enckeias15_0(double *apert, double *atc, double *xtrue, double *m, int n)
+void acceleration_0(double *apert, double *atc, double *xtrue, double *m, int n)
 {
     double factor1[NMAX][NDIM];
     double r2,rij[NDIM],r3;
