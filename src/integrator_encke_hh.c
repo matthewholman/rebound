@@ -1,5 +1,50 @@
-/*adaptive stepping, add absolute value of b's?*/
-/*adaptive stepping take into account initial t=0 acceleration*/
+/**
+ * @file    integrator_encke_hh.c
+ * @brief   EnckeHH integrator.
+ * @author  David Hernandez <dmhernandez@cfa.harvard.edu>
+ * @author  Matthew Holman <mholmancfa.harvard.edu>
+ * @details This file implements the EnckeHH integration scheme.  
+ * This routine implements Encke's method, in which the equations of
+ * motion represent the difference between the actual trajectory and
+ * a nearby, Keplerian reference trajectory.  EnckeHH builds upon the
+ * IAS15 integrator (Rein & Spiegel 2014), using the same fifteenth
+ * order integrator and care to control roundoff error, but Encke's
+ * equations of motion. 
+ *
+ * As noted in integrator_ias15.c:
+ * For more details see Rein & Spiegel 2014. Also see Everhart, 1985,
+ * ASSL Vol. 115, IAU Colloq. 83, Dynamics of Comets, Their Origin 
+ * and Evolution, 185 for the original implementation by Everhart.
+ * Part of this code is based a function from the ORSE package.
+ * See orsa.sourceforge.net for more details on their implementation.
+ * 
+ * @section     LICENSE
+ * Copyright (c) 2020      David Hernandez, Matthew Holman.
+ * Copyright (c) 2011-2012 Hanno Rein, Dave Spiegel.
+ * Copyright (c) 2002-2004 Pasquale Tricarico.
+ *
+ * This file was developed within a branch of rebound, but the authors
+ * of rebound are not responsible for the content of this file.
+ *
+ * EnckeHH is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * rebound is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * rebound is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with rebound.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,8 +64,6 @@
 #define EPSILONRESET 0.01
 #include "universal.h"
 
-static void copybuffers(const struct reb_dpconst7 _a, const struct reb_dpconst7 _b, int N3);
-
 /////////////////////////
 //   Constants 
 
@@ -35,6 +78,8 @@ static const double rr[28] = {0.0562625605369221464656522, 0.1802406917368923649
 static const double c[21] = {-0.0562625605369221464656522, 0.0101408028300636299864818, -0.2365032522738145114532321, -0.0035758977292516175949345, 0.0935376952594620658957485, -0.5891279693869841488271399, 0.0019565654099472210769006, -0.0547553868890686864408084, 0.4158812000823068616886219, -1.1362815957175395318285885, -0.0014365302363708915424460, 0.0421585277212687077072973, -0.3600995965020568122897665, 1.2501507118406910258505441, -1.8704917729329500633517991, 0.0012717903090268677492943, -0.0387603579159067703699046, 0.3609622434528459832253398, -1.4668842084004269643701553, 2.9061362593084293014237913, -2.7558127197720458314421588};
 static const double d[21] = {0.0562625605369221464656522, 0.0031654757181708292499905, 0.2365032522738145114532321, 0.0001780977692217433881125, 0.0457929855060279188954539, 0.5891279693869841488271399, 0.0000100202365223291272096, 0.0084318571535257015445000, 0.2535340690545692665214616, 1.1362815957175395318285885, 0.0000005637641639318207610, 0.0015297840025004658189490, 0.0978342365324440053653648, 0.8752546646840910912297246, 1.8704917729329500633517991, 0.0000000317188154017613665, 0.0002762930909826476593130, 0.0360285539837364596003871, 0.5767330002770787313544596, 2.2485887607691597933926895, 2.7558127197720458314421588};
 
+// From integrator_ias15.c
+static void copybuffers(const struct reb_dpconst7 _a, const struct reb_dpconst7 _b, int N3);
 
 // Machine independent implementation of pow(*,1./7.)
 // From integrator_ias15.c
@@ -133,6 +178,9 @@ void reb_integrator_encke_hh_reset(struct reb_simulation* r){
     free(r->ri_encke_hh.a0);
     r->ri_encke_hh.a0 =  NULL;
 
+    free(r->ri_encke_hh.xt);
+    r->ri_encke_hh.xt =  NULL;
+
     free(r->ri_encke_hh.atr);
     r->ri_encke_hh.atr =  NULL;
     
@@ -143,6 +191,48 @@ void reb_integrator_encke_hh_reset(struct reb_simulation* r){
     free(r->ri_encke_hh.csa0);
     r->ri_encke_hh.csa0 =  NULL;
 
+    for(int i=0; i<NSTEP; i++){
+	free(r->ri_encke_hh.xkep[i]);
+    }
+    free(r->ri_encke_hh.vkep);
+    r->ri_encke_hh.vkep = NULL;
+    for(int i=0; i<NSTEP; i++){
+	free(r->ri_encke_hh.vkep[i]);	
+    }
+    free(r->ri_encke_hh.vkep);
+    r->ri_encke_hh.vkep = NULL;
+
+    free(r->ri_encke_hh.csxhtemp);
+    for(int i=0; i<NSTEP; i++){
+	free(r->ri_encke_hh.csxhtemp[i]);
+    }
+    free(r->ri_encke_hh.csxhtemp);    
+    r->ri_encke_hh.csxhtemp = NULL;
+
+    for(int i=0; i<NSTEP; i++){
+	free(r->ri_encke_hh.csvhtemp[i]);	
+    }
+    free(r->ri_encke_hh.csvhtemp);
+    r->ri_encke_hh.csvhtemp = NULL;
+
+    for(int i=0; i<NSTEP; i++){
+	free(r->ri_encke_hh.xtwobod2[i]);	
+    }
+    free(r->ri_encke_hh.xtwobod2);
+    r->ri_encke_hh.xtwobod2 = NULL;
+
+    for(int i=0; i<NSTEP; i++){
+	free(r->ri_encke_hh.xtwobod3[i]);	
+    }
+    free(r->ri_encke_hh.xtwobod3);
+    r->ri_encke_hh.xtwobod3 = NULL;
+    
+    for(int i=0; i<NSTEP; i++){
+	free(r->ri_encke_hh.factor1keep[i]);	
+    }
+    free(r->ri_encke_hh.factor1keep);
+    r->ri_encke_hh.factor1keep = NULL;
+    
     free(r->ri_encke_hh.gravitycsvr);
     r->ri_encke_hh.gravitycsvr =  NULL;
 
@@ -170,6 +260,9 @@ void reb_integrator_encke_hh_alloc(struct reb_simulation* r){
         r->ri_encke_hh.x0 = realloc(r->ri_encke_hh.x0,sizeof(double)*N3);
         r->ri_encke_hh.v0 = realloc(r->ri_encke_hh.v0,sizeof(double)*N3);
         r->ri_encke_hh.a0 = realloc(r->ri_encke_hh.a0,sizeof(double)*N3);
+
+        r->ri_encke_hh.xt = realloc(r->ri_encke_hh.xt,sizeof(double)*N3);
+	
         //r->ri_encke_hh.atr = realloc(r->ri_encke_hh.atr,sizeof(double)*N3);	
         r->ri_encke_hh.csx= realloc(r->ri_encke_hh.csx,sizeof(double)*N3);
         r->ri_encke_hh.csv= realloc(r->ri_encke_hh.csv,sizeof(double)*N3);
@@ -184,6 +277,41 @@ void reb_integrator_encke_hh_alloc(struct reb_simulation* r){
 
         orbstruct* restrict const orb = r->ri_encke_hh.orb;
 
+	r->ri_encke_hh.xkep = realloc(r->ri_encke_hh.xkep,sizeof(double *)*NSTEP);
+	for (int i=0; i<NSTEP; i++) {
+	    r->ri_encke_hh.xkep[i] = realloc(r->ri_encke_hh.xkep[i],sizeof(double)*N3);
+	}
+
+	r->ri_encke_hh.vkep = realloc(r->ri_encke_hh.vkep,sizeof(double *)*NSTEP);
+	for (int i=0; i<NSTEP; i++) {
+	    r->ri_encke_hh.vkep[i] = realloc(r->ri_encke_hh.vkep[i],sizeof(double)*N3);
+	}
+
+	r->ri_encke_hh.csxhtemp = realloc(r->ri_encke_hh.csxhtemp,sizeof(double *)*NSTEP);
+	for (int i=0; i<NSTEP; i++) {
+	    r->ri_encke_hh.csxhtemp[i] = realloc(r->ri_encke_hh.csxhtemp[i],sizeof(double)*N3);
+	}
+
+	r->ri_encke_hh.csvhtemp = realloc(r->ri_encke_hh.csvhtemp,sizeof(double *)*NSTEP);
+	for (int i=0; i<NSTEP; i++) {
+	    r->ri_encke_hh.csvhtemp[i] = realloc(r->ri_encke_hh.csvhtemp[i],sizeof(double)*N3);
+	}
+
+	r->ri_encke_hh.xtwobod2 = realloc(r->ri_encke_hh.xtwobod2,sizeof(double *)*NSTEP);
+	for (int i=0; i<NSTEP; i++) {
+	    r->ri_encke_hh.xtwobod2[i] = realloc(r->ri_encke_hh.xtwobod2[i],sizeof(double)*N);
+	}
+
+	r->ri_encke_hh.xtwobod3 = realloc(r->ri_encke_hh.xtwobod3,sizeof(double *)*NSTEP);
+	for (int i=0; i<NSTEP; i++) {
+	    r->ri_encke_hh.xtwobod3[i] = realloc(r->ri_encke_hh.xtwobod3[i],sizeof(double)*N);
+	}
+
+	r->ri_encke_hh.factor1keep = realloc(r->ri_encke_hh.factor1keep,sizeof(double *)*NSTEP);
+	for (int i=0; i<NSTEP; i++) {
+	    r->ri_encke_hh.factor1keep[i] = realloc(r->ri_encke_hh.factor1keep[i],sizeof(double)*N3);
+	}
+	
         for (int i=0;i<N3;i++){
             // Initialize compensated summation coefficients
             csx[i] = 0.;
@@ -207,59 +335,32 @@ void reb_integrator_encke_hh_alloc(struct reb_simulation* r){
 
 }
 
+// From integrator_ias15.c
 void predict_next_step(double ratio, int N3,  const struct reb_dpconst7 _e, const struct reb_dpconst7 _b, const struct reb_dpconst7 e, const struct reb_dpconst7 b);
 
+// Forward declaration
 void predict_kepler(orbstruct* restrict const orb, 
 		    double dt, double del0,
 		    double **xkep,
 		    double **vkep,
 		    double **csxhtemp, double **csvhtemp,
-		    double **xtwobod3, double **xtwobod2o,
+		    double **xtwobod3, double **xtwobod2,
 		    int n,
 		    int si);
 
-
-// This is the key routine.
-//
-// m[NMAX] are the masses, GNEWT is the gravitational constant.
-// Those should be combined, in my opinion.
-// NMAX is a big number but is the limit on the number of masses, including the sun.
-//
-// x[NMAX] are the position perturbation vectors of the masses
-// v[NMAX] are the velocity perturbation vectors of the masses
-// at[NMAX] are the acceleration perturation vectors of the masses
-// bp, ep, brp, erp are the same parameters as in IAS15
-// xnk[NMAX] is the position vector of the reference trajectories
-// vvk[NMAX] is the velocity vector of the reference trajectories
-// csxh[NMAX] are compensated sums for reference positions
-// csvh[NMAX] are compensated sums for reference velocities
-// csx[NMAX] are compensated sums for positions leftover from previous step
-// csv[NMAX] are compensated sums for velocities leftover from previous step
-// csa0[NMAX] are compensated sums for acceleration leftover from previous step
-//
-// csa0, csx, cvv are 3N dimension.
-//
-// t0 is the time of the reference trajectory.
-// orb is saving parameters that are useful for the kepler solver
-// *iter is number of iterations
-// N is the number of planets and sun
-// epsilon is our adaptive step parameter, which is different from that of IAS15.
-// factor1keepprime may not be important.  For adaptive stepping
-// *ccount is counting the number of times when increasing error occurred.
-
+// This is the main routine.
 int reb_integrator_encke_hh_step(struct reb_simulation* r)
 {
 
-    //reb_integrator_ias15_alloc(r);
-    reb_integrator_encke_hh_alloc(r);    
+    reb_integrator_encke_hh_alloc(r);
 
     struct reb_particle* const particles = r->particles;
-    int* map; // this map allow for integrating only a selection of particles 
+    // map is not fully implemented yet
+    int* map; // this map allow for integrating only a selection of particles
     int N = r->N;
     map = r->ri_encke_hh.map; // identity map
     
     double s[9];
-
 
     // Should this be moved into the simulation structure?
     static double gravitycsv[NMAX];
@@ -274,22 +375,22 @@ int reb_integrator_encke_hh_step(struct reb_simulation* r)
 
     double const epsilon = r->ri_encke_hh.epsilon;
 
-
     // compensated sums for the perturbations
     double* restrict const csx = r->ri_encke_hh.csx; 
     double* restrict const csv = r->ri_encke_hh.csv; 
     double* restrict const csa0 = r->ri_encke_hh.csa0;
 
-    // compensated sums for the reference orbits
     double* restrict const x0 = r->ri_encke_hh.x0; 
     double* restrict const v0 = r->ri_encke_hh.v0; 
     double* restrict const a0 = r->ri_encke_hh.a0;
 
     double* restrict const at = r->ri_encke_hh.at; 
-    double* restrict const atr = r->ri_encke_hh.atr;    
+    double* restrict const atr = r->ri_encke_hh.atr;
+
+    double* restrict const xt = r->ri_encke_hh.xt;
 
     double* restrict const gravitycsvr = r->ri_encke_hh.gravitycsvr;        
-    //struct reb_vec3d* gravity_cs_t = r->gravity_cs; 
+    struct reb_vec3d* gravity_cs = r->gravity_cs; 
     const struct reb_dpconst7 g  = dpcast(r->ri_encke_hh.g);
     const struct reb_dpconst7 e  = dpcast(r->ri_encke_hh.e);
     const struct reb_dpconst7 b  = dpcast(r->ri_encke_hh.b);
@@ -297,56 +398,16 @@ int reb_integrator_encke_hh_step(struct reb_simulation* r)
     const struct reb_dpconst7 er = dpcast(r->ri_encke_hh.er);
     const struct reb_dpconst7 br = dpcast(r->ri_encke_hh.br);
 
-    static int first = 1;
-    static double *xt;
-    static double **xkep;
-    static double **vkep;
-    static double **csxhtemp, **csvhtemp;
-    static double **xtwobod2, **xtwobod3;
-    static double **factor1keep;
+    double** restrict const xkep = r->ri_encke_hh.xkep;
+    double** restrict const vkep = r->ri_encke_hh.vkep;        
 
-    // These should go into the ri_encke_hh structure and be allocated once.
-    if(first == 1){
-	xt = malloc(NMAX*sizeof(double));
+    double** restrict const csxhtemp = r->ri_encke_hh.csxhtemp;
+    double** restrict const csvhtemp = r->ri_encke_hh.csvhtemp;    
 
-	xkep = malloc(NSTEP * sizeof(double *)); 
-	for (int i=0; i<NSTEP; i++) {
-	    xkep[i] = malloc(NMAX * sizeof(double));
-	}
+    double** restrict const xtwobod2 = r->ri_encke_hh.xtwobod2;
+    double** restrict const xtwobod3 = r->ri_encke_hh.xtwobod3;
 
-	vkep = malloc(NSTEP * sizeof(double *)); 
-	for (int i=0; i<NSTEP; i++) {
-	    vkep[i] = malloc(NMAX * sizeof(double));
-	}
-
-	csxhtemp = malloc(NSTEP * sizeof(double *)); 
-	for (int i=0; i<NSTEP; i++) {
-	    csxhtemp[i] = malloc(NMAX * sizeof(double));
-	}
-
-	csvhtemp = malloc(NSTEP * sizeof(double *)); 
-	for (int i=0; i<NSTEP; i++) {
-	    csvhtemp[i] = malloc(NMAX * sizeof(double));
-	}
-
-	xtwobod2 = malloc(NSTEP * sizeof(double *)); 
-	for (int i=0; i<NSTEP; i++) {
-	    xtwobod2[i] = malloc(NMAX * sizeof(double));
-	}
-
-	xtwobod3 = malloc(NSTEP * sizeof(double *)); 
-	for (int i=0; i<NSTEP; i++) {
-	    xtwobod3[i] = malloc(NMAX * sizeof(double));
-	}
-
-	factor1keep = malloc(NSTEP * sizeof(double *)); 
-	for (int i=0; i<NSTEP; i++) {
-	    factor1keep[i] = malloc(NMAX * sizeof(double));
-	}
-	
-	first = 0;
-	
-    }
+    double** restrict const factor1keep = r->ri_encke_hh.factor1keep;        
 
     int iterations;
     int const si=8; 
@@ -394,7 +455,8 @@ int reb_integrator_encke_hh_step(struct reb_simulation* r)
     // We know what time step we are going to try to take.
     // Get the positions and the velocities at the substeps and at the end
     // of the step.
-    orbstruct* restrict const orb = r->ri_encke_hh.orb;    
+    orbstruct* restrict const orb = r->ri_encke_hh.orb;
+
     predict_kepler(orb,dtinit,del0,xkep,vkep,csxhtemp,csvhtemp,xtwobod3,xtwobod2,N,si);
 
     // Initializing the g values
@@ -743,6 +805,8 @@ void update_two_bod(struct reb_simulation* r,
 
     int ikeep;    
     static double apertp[NDIM];
+
+    // Should get rid of NMAX and make these dynamic.
     static double csxht[NMAX],csvht[NMAX],xhel[NMAX],vhel[NMAX];
     static double xpert[NMAX],vpert[NMAX];
 
@@ -811,7 +875,6 @@ void update_two_bod(struct reb_simulation* r,
 	    }
 	}
     }
-
 
     for(int i=0; i<N; i++){
 	xhel[3*i+0] = orb[i].x;
@@ -932,7 +995,6 @@ static void copybuffers(const struct reb_dpconst7 _a, const struct reb_dpconst7 
 //  }
 }
 
-
 // This is original from IAS15.
 void predict_next_step(double ratio, int N3,  const struct reb_dpconst7 _e, const struct reb_dpconst7 _b, const struct reb_dpconst7 e, const struct reb_dpconst7 b){
     if (ratio>20.){
@@ -1018,7 +1080,7 @@ void predict_kepler(orbstruct* restrict const orb,
 		
 		add_cs(&(xo[k]), &(csxhtemp[i][3*j+k]), delx[k]);
 		add_cs(&(vo[k]), &(csvhtemp[i][3*j+k]), delv[k]);
-		
+
 		xkep[i][3*j+k] = xo[k];
 		vkep[i][3*j+k] = vo[k];
 
@@ -1035,15 +1097,15 @@ void predict_kepler(orbstruct* restrict const orb,
 // all the bodies at substep n0.
 // 
 void encke_hh_acceleration(double *apert, double *atc, 
-		     double *apertr, double *atcr,
-		     double *xpert,		     
-		     double Msun,
-		     double *m,
-		     double *xkep, double *vkep,
-		     double *xtwobod2in, double *xtwobod3in,
-		     double *csxhtemp, double *csvhtemp,		     
-		     double *factor1keep,
-		     int n)
+			   double *apertr, double *atcr,
+			   double *xpert,		     
+			   double Msun,
+			   double *m,
+			   double *xkep, double *vkep,
+			   double *xtwobod2in, double *xtwobod3in,
+			   double *csxhtemp, double *csvhtemp,		     
+			   double *factor1keep,
+			   int n)
 {
 
     // These should be allocated.

@@ -87,9 +87,6 @@ int main(int argc, char **argv)
       timek = clock();
       printf("%g done\n",(float)is/(float)iseed);
 
-      printf("here\n");
-      fflush(stdout);
-
       // Set up initial conditions
       insolarencke(r, epsilon, is);
 

@@ -6,7 +6,9 @@
  * @section     LICENSE
  * Copyright (c) 2015 Hanno Rein, Shangfei Liu
  *
- * This file is part of rebound.
+ * This file is part of a branch of rebound.
+ * David Hernandez and Matthew Holman have added portions to
+ * support the EnckeHH integrator.
  *
  * rebound is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -479,12 +481,12 @@ typedef struct
 } orbstruct;
     
 /**
- * @brief This structure contains variables and pointer used by the IAS15 integrator.
+ * @brief This structure contains variables and pointer used by the EnckeHH integrator.
  */
 struct reb_simulation_integrator_encke_hh {
     /**
      * @brief This parameter controls the accuracy of the integrator.
-     * @details Set to -1 to make encke a non-adaptive integrator.
+     * @details Set to -1 to make encke_hh a non-adaptive integrator.
      **/
     double epsilon;
 
@@ -512,29 +514,30 @@ struct reb_simulation_integrator_encke_hh {
     double* REBOUND_RESTRICT a0;            ///<                      acceleration
     double* REBOUND_RESTRICT csa0;          ///<                      compensated summation for a
 
+    double* REBOUND_RESTRICT xt;            ///< Temporary buffer for positions
+    double* REBOUND_RESTRICT vt;            ///< Temporary buffer for velocities
+
     double* REBOUND_RESTRICT csx;           ///<                      compensated summation for x
     double* REBOUND_RESTRICT csv;           ///<                      compensated summation for v
 
-    //double* REBOUND_RESTRICT xhel;
-    //double* REBOUND_RESTRICT vhel;
-    
-    //double* REBOUND_RESTRICT csxh;          ///<                      compensated summation for ref x
-    //double* REBOUND_RESTRICT csvh;          ///<                      compensated summation for ref v
+    double** REBOUND_RESTRICT xkep;         ///< Temporary buffers for position of reference orbits
+    double** REBOUND_RESTRICT vkep;         ///< Temporary buffers for position of reference orbits
 
-    // Quantities below could be stored in particle arrays
-    double* REBOUND_RESTRICT m;             ///<                      masses
-    //double* REBOUND_RESTRICT xpert;
-    //double* REBOUND_RESTRICT vpert;
-    //double* REBOUND_RESTRICT apert;
+    double** REBOUND_RESTRICT csxhtemp;     ///< Compensated sums for reference orbit positions
+    double** REBOUND_RESTRICT csvhtemp;     ///< Compensated sums for reference orbit velocities
+
+    double** REBOUND_RESTRICT xtwobod2;     ///< Temporary buffers for r^2 values of reference orbits
+    double** REBOUND_RESTRICT xtwobod3;     ///< Temporary buffers for r^3 values of reference orbits
+    double** REBOUND_RESTRICT factor1keep;  ///< Temporary buffers for GM/r values to avoid recalculation
+    
+    double* REBOUND_RESTRICT m;             ///< Convenience buffer for masses
 
     double* REBOUND_RESTRICT atr;           ///<                      acceleration
     double* REBOUND_RESTRICT gravitycsvr;   ///<                      compensated summation for gravity
 
-    //double* REBOUND_RESTRICT factor1keepprime;    
-
     struct reb_dp7 g;
     struct reb_dp7 b;
-    struct reb_dp7 csb;         ///< Compensated summation for b
+    struct reb_dp7 csb;                     ///< Compensated summation for b
     struct reb_dp7 e;
 
     // The following values are used for resetting the b and e coefficients if a timestep gets rejected

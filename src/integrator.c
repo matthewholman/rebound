@@ -10,7 +10,9 @@
  * @section 	LICENSE
  * Copyright (c) 2015 Hanno Rein
  * 
- * This file is part of rebound.
+ * This file is part of a branch of rebound.
+ * David Hernandez and Matthew Holman have added portions to
+ * support the EnckeHH integrator.
  *
  * rebound is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
