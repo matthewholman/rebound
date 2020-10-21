@@ -38,23 +38,14 @@ void consqp(struct reb_simulation* r, double *Ep, double L[NDIM], double *Lmp);
 int main(int argc, char **argv)
 {
     /*begin initialization*/
-	//This is a test comment DH
-
-    // Here is another comment MJH
 
     struct reb_simulation* r = reb_create_simulation();
 
     double tmax;
 
-    int nsteps=1000,flgt=0,flg=0;    
+    int flg=0;    
 
-    int iseed=1; // = 1000;
-
-    double tv[NMAX2],diff,tticks,tav=0.;
-
-    int ccount = 0,rcount = 0;
-    double itav1=0.,itav2=0.;
-    int ct1=0,ct2=0;
+    int rcount = 0;
 
     double E0, E;
     double L0[NDIM], L0m, Lm, L[NDIM];
@@ -64,107 +55,42 @@ int main(int argc, char **argv)
     r->dt = atof(argv[1]);
     tmax = atof(argv[2]);
     double epsilon = atof(argv[3]);
-
-    /*log spaced outputs*/
-    /*diff = log10(tmax) - 0.;
-    tticks = diff/((float)nsteps);
-    tvl[0] = 0;
-    tv[0] = 1; */
-    
-    diff = tmax;
-   tticks = diff/((float)nsteps);
-    tv[0] = 0.;
-
-    // Set up output times.
-    for(int i=1; i<(nsteps+1); i++){    
-      /*tvl[i] = tvl[i-1] + tticks;
-      tv[i] = pow(10,tvl[i]); */
-      tv[i] = tv[i-1] + tticks;
-    }
-
-    for(int is=0; is<iseed; is++){        
-      printf("seed=%d\n",is);
+       
       timek = clock();
-      printf("%g done\n",(float)is/(float)iseed);
 
       // Set up initial conditions
+      int is = 1;
       insolarencke(r, epsilon, is);
 
       // Calculate the initial energy and angular momentum
       consqp(r, &E0, L0, &L0m);
-
-      int ic = 0;
       int i = 0;
-      double hav = 0.;
       
-      //t = 0.;
       r->ri_encke_hh.t0 = 0.;
-
-      // Open output file 
-      char filen[50];
-      FILE *fcons;      
-      sprintf(filen,"data/fcons%d.txt",is);
-      fcons = fopen(filen,"w");
-
-      fprintf(fcons,"%0.16le %0.16le\n",r->t,E0);
-      fflush(fcons);
-
       r->ri_encke_hh.ccount=0;
 
       while(r->t < tmax){
         i++;
 
-	r->ri_encke_hh.iter=0;
-
-	reb_integrator_encke_hh_step(r);
-
-	if(rcount == 0){
-            itav1 = itav1 + (float)(r->ri_encke_hh.iter);
-            ct1++;
-	}else{
-            itav2 = itav2 + (float)(r->ri_encke_hh.iter);
-            ct2++;
-	}
+    	reb_integrator_encke_hh_step(r);
 
         if((r->t) > (r->ri_encke_hh.t0)){
-	    // Updates the reference trajectory
-	    update_two_bod(r,&flg,&rcount);
-          flgt += flg;
+        // Updates the reference trajectory
+        update_two_bod(r,&flg,&rcount);
         }
-
-        hav += (r->dt);
-    	
-        if((r->t) > tv[ic]){
-          ic++;
-          consqp(r, &E,L,&Lm);
-          fprintf(fcons,"%0.16le %0.16le\n",(r->t),E);
-        }
-        if(ic == (nsteps+1)) break; //done with integration
       }
-      printf("it1=%g it2=%g\n",itav1/((float)ct1),itav2/((float)ct2));
 
-      hav /= (double)i;
       consqp(r,&E,L,&Lm);
       timek = clock()-timek;
       double time_taken = ((double)timek)/CLOCKS_PER_SEC; // in seconds 
-      tav += time_taken;
 
-      printf("ccount=%d rcount=%d\n",ccount,rcount);
-      printf("%g done, dE/E=%g, timet=%e hav=%g tdone=%g\n",(float)is/(float)iseed,(E0-E)/E0,time_taken,hav,tv[ic]);
-      fclose(fcons);
-    }
-
-    tav /= (float)(iseed+1);
-    printf("av compute time=%e\n",tav);
+      printf("dE/E=%g, timet=%e\n",(E0-E)/E0,time_taken);
 
 }
 
 
 void insolarencke(struct reb_simulation* r, double epsilon, int is)
 {
-
-    /*Below data from Hairer pg. 13-14.  Convert time to years.
-      Distance is in AU, mass in solar masses */
 
     int nprog = 5;
 
@@ -236,8 +162,7 @@ void insolarencke(struct reb_simulation* r, double epsilon, int is)
 	}
     }
 
-    /*force center of mass to be stationary and centered (not needed) */
-
+    /*force center of mass to be stationary and centered*/
     double xcm[NDIM],vcm[NDIM];
     
     double mt = 0.0;
