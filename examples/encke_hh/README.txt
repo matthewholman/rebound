@@ -1,4 +1,8 @@
-To compile this example, type the following:
+To run this example, please first clone the matthewholman/rebound directory:
+
+git clone https://github.com/matthewholman/rebound.git
+
+Then navigate to this example directory and compile:
 
 make clean
 make
