@@ -55,29 +55,27 @@ int main(int argc, char **argv)
     r->dt = atof(argv[1]);
     tmax = atof(argv[2]);
     double epsilon = atof(argv[3]);
-       
-      timek = clock();
+    
+    timek = clock();
 
-      //hi, DMH
-      // Set up initial conditions
-      int is = 1;
-      insolarencke(r, epsilon, is);
+    // Set up initial conditions
+    int is=0;
+    insolarencke(r, epsilon, is);
 
-      // Calculate the initial energy and angular momentum
-      consqp(r, &E0, L0, &L0m);
-      int i = 0;
+    // Calculate the initial energy and angular momentum
+    consqp(r, &E0, L0, &L0m);
+
+    int i = 0;
       
-      r->ri_encke_hh.t0 = 0.;
-      r->ri_encke_hh.ccount=0;
+    r->ri_encke_hh.t0 = 0.;
 
-      while(r->t < tmax){
-        i++;
+    while(r->t < tmax){
+       i++;
+	   reb_integrator_encke_hh_step(r);
 
-    	reb_integrator_encke_hh_step(r);
-
-        if((r->t) > (r->ri_encke_hh.t0)){
-        // Updates the reference trajectory
-        update_two_bod(r,&flg,&rcount);
+       if((r->t) > (r->ri_encke_hh.t0)){
+	    // Updates the reference trajectory
+	       update_two_bod(r,&flg,&rcount);
         }
       }
 
@@ -85,7 +83,7 @@ int main(int argc, char **argv)
       timek = clock()-timek;
       double time_taken = ((double)timek)/CLOCKS_PER_SEC; // in seconds 
 
-      printf("dE/E=%g, timet=%e\n",(E0-E)/E0,time_taken);
+      printf("dE/E=%0.16le, timet=%g\n",(E-E0)/E0,time_taken);
 
 }
 
@@ -163,7 +161,8 @@ void insolarencke(struct reb_simulation* r, double epsilon, int is)
 	}
     }
 
-    /*force center of mass to be stationary and centered*/
+    /*force center of mass to be stationary and centered (not needed) */
+
     double xcm[NDIM],vcm[NDIM];
     
     double mt = 0.0;
