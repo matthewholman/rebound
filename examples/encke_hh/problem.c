@@ -58,6 +58,7 @@ int main(int argc, char **argv)
        
       timek = clock();
 
+      //hi, DMH
       // Set up initial conditions
       int is = 1;
       insolarencke(r, epsilon, is);
