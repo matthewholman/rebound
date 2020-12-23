@@ -495,6 +495,7 @@ int reb_integrator_encke_hh_step(struct reb_simulation* r)
 
 	for(int n=1;n<si;n++) {                   // Loop over interval using Gauss-Radau spacings
 
+            
             s[0] = dtinit * h[n];
             s[1] = s[0] * s[0] / 2.;
             s[2] = s[1] * h[n] / 3.;
@@ -505,6 +506,7 @@ int reb_integrator_encke_hh_step(struct reb_simulation* r)
             s[6] = 5. * s[5] * h[n] / 7.;
             s[7] = 3. * s[6] * h[n] / 4.;
             s[8] = 7. * s[7] * h[n] / 9.;
+            
 
 	    for(int i=0; i<N; i++){  	    
 	        // Predict perturbation positions at interval n using b values
@@ -516,12 +518,23 @@ int reb_integrator_encke_hh_step(struct reb_simulation* r)
 
 		// The order of the sums below, which proceed left to right, matters.
 
+
                 xt[k0] = -csx[k0] + (s[8]*b.p6[k0] + s[7]*b.p5[k0] + s[6]*b.p4[k0] + s[5]*b.p3[k0] + s[4]*b.p2[k0] + s[3]*b.p1[k0] + s[2]*b.p0[k0] + s[1]*a0[k0] + s[0]*v0[k0] ) + x0[k0];		
 
                 xt[k1] = -csx[k1] + (s[8]*b.p6[k1] + s[7]*b.p5[k1] + s[6]*b.p4[k1] + s[5]*b.p3[k1] + s[4]*b.p2[k1] + s[3]*b.p1[k1] + s[2]*b.p0[k1] + s[1]*a0[k1] + s[0]*v0[k1] ) + x0[k1];
 		
                 xt[k2] = -csx[k2] + (s[8]*b.p6[k2] + s[7]*b.p5[k2] + s[6]*b.p4[k2] + s[5]*b.p3[k2] + s[4]*b.p2[k2] + s[3]*b.p1[k2] + s[2]*b.p0[k2] + s[1]*a0[k2] + s[0]*v0[k2] ) + x0[k2];
 
+
+/*
+also comment out s vectors above if use this
+
+                    xt[k0] = -csx[k0] + ((((((((b.p6[k0]*7.*h[n]/9. + b.p5[k0])*3.*h[n]/4. + b.p4[k0])*5.*h[n]/7. + b.p3[k0])*2.*h[n]/3. + b.p2[k0])*3.*h[n]/5. + b.p1[k0])*h[n]/2. + b.p0[k0])*h[n]/3. + a0[k0])*dtinit*h[n]/2. + v0[k0])*dtinit*h[n] + x0[k0];
+
+                    xt[k1] = -csx[k1] + ((((((((b.p6[k1]*7.*h[n]/9. + b.p5[k1])*3.*h[n]/4. + b.p4[k1])*5.*h[n]/7. + b.p3[k1])*2.*h[n]/3. + b.p2[k1])*3.*h[n]/5. + b.p1[k1])*h[n]/2. + b.p0[k1])*h[n]/3. + a0[k1])*dtinit*h[n]/2. + v0[k1])*dtinit*h[n] + x0[k1];
+
+                    xt[k2] = -csx[k2] + ((((((((b.p6[k2]*7.*h[n]/9. + b.p5[k2])*3.*h[n]/4. + b.p4[k2])*5.*h[n]/7. + b.p3[k2])*2.*h[n]/3. + b.p2[k2])*3.*h[n]/5. + b.p1[k2])*h[n]/2. + b.p0[k2])*h[n]/3. + a0[k2])*dtinit*h[n]/2. + v0[k2])*dtinit*h[n] + x0[k2];
+  */                  
             }
 
 	    // Calculate acceleration based on the current positions, 
@@ -714,6 +727,8 @@ int reb_integrator_encke_hh_step(struct reb_simulation* r)
     /*************************************/
 
     for(int k=0;k<N3;++k) {
+
+        
 	{
 	    add_cs(&(x0[k]), &(csx[k]), b.p6[k]/72.*dt_done2);
 	    add_cs(&(x0[k]), &(csx[k]), b.p5[k]/56.*dt_done2);
@@ -735,8 +750,33 @@ int reb_integrator_encke_hh_step(struct reb_simulation* r)
 	    add_cs(&(v0[k]), &(csv[k]), b.p0[k]/2.*dt_done);
 	    add_cs(&(v0[k]), &(csv[k]), a0[k]*dt_done);
 	}
+    
+    /*
 
+
+            add_cs(&(x0[k]), &(csx[k]), b.p6[k]/72.*dt_done*dt_done);
+            add_cs(&(x0[k]), &(csx[k]), b.p5[k]/56.*dt_done*dt_done);
+            add_cs(&(x0[k]), &(csx[k]), b.p4[k]/42.*dt_done*dt_done);
+            add_cs(&(x0[k]), &(csx[k]), b.p3[k]/30.*dt_done*dt_done);
+            add_cs(&(x0[k]), &(csx[k]), b.p2[k]/20.*dt_done*dt_done);
+            add_cs(&(x0[k]), &(csx[k]), b.p1[k]/12.*dt_done*dt_done);
+            add_cs(&(x0[k]), &(csx[k]), b.p0[k]/6.*dt_done*dt_done);
+            add_cs(&(x0[k]), &(csx[k]), a0[k]/2.*dt_done*dt_done);
+            add_cs(&(x0[k]), &(csx[k]), v0[k]*dt_done);
+
+            add_cs(&(v0[k]), &(csv[k]), b.p6[k]/8.*dt_done);
+            add_cs(&(v0[k]), &(csv[k]), b.p5[k]/7.*dt_done);
+            add_cs(&(v0[k]), &(csv[k]), b.p4[k]/6.*dt_done);
+            add_cs(&(v0[k]), &(csv[k]), b.p3[k]/5.*dt_done);
+            add_cs(&(v0[k]), &(csv[k]), b.p2[k]/4.*dt_done);
+            add_cs(&(v0[k]), &(csv[k]), b.p1[k]/3.*dt_done);
+            add_cs(&(v0[k]), &(csv[k]), b.p0[k]/2.*dt_done);
+            add_cs(&(v0[k]), &(csv[k]), a0[k]*dt_done);
+         */   
     }
+
+
+    //}
 
     // This is where the particle arrays would be used.
     /*
